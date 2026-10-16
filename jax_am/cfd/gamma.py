@@ -16,30 +16,52 @@ def update_mat(T, gamma_args):
     return fl, k, cp
 
 
+# @jax.jit
+# def BC_thermal(T, k, xl, yl, x, y, P, dx, dy, dz, gamma_args):
+#     """Robin boundary condition
+#     """
+#     T_x_neg = (T[ 1,1:-1,1:-1] + T[ 0,1:-1,1:-1])/2.
+#     q_x_neg = (-gamma_args['h']*(T_x_neg-gamma_args['T0']) - gamma_args['SB']*gamma_args['eps']*(T_x_neg**4-gamma_args['T0']**4))
+#     T_x_pos = (T[-2,1:-1,1:-1] + T[-1,1:-1,1:-1])/2
+#     q_x_pos =  (gamma_args['h']*(T_x_pos-gamma_args['T0']) + gamma_args['SB']*gamma_args['eps']*(T_x_pos**4-gamma_args['T0']**4))
+#     T_y_neg = (T[1:-1, 1,1:-1] + T[1:-1, 0,1:-1])/2
+#     q_y_neg = (-gamma_args['h']*(T_y_neg-gamma_args['T0']) - gamma_args['SB']*gamma_args['eps']*(T_y_neg**4-gamma_args['T0']**4))
+#     T_y_pos = (T[1:-1,-2,1:-1] + T[1:-1,-1,1:-1])/2
+#     q_y_pos =  (gamma_args['h']*(T_y_pos-gamma_args['T0']) + gamma_args['SB']*gamma_args['eps']*(T_y_pos**4-gamma_args['T0']**4))
+#     T_z_neg = (T[1:-1,1:-1, 1] + T[1:-1,1:-1, 0])/2
+#     q_z_neg = (-gamma_args['h']*(T_z_neg-gamma_args['T0']) - gamma_args['SB']*gamma_args['eps']*(T_z_neg**4-gamma_args['T0']**4))
+#     T_z_pos = (T[1:-1,1:-1,-2] + T[1:-1,1:-1,-1])/2
+#     q_z_pos = ( gamma_args['h']*(T_z_pos-gamma_args['T0']) + gamma_args['SB']*gamma_args['eps']*(T_z_pos**4-gamma_args['T0']**4) \
+#                - 2*P*gamma_args['eta']/jnp.pi/gamma_args['r']**2*jnp.exp(-2*((x[:,:,-1]-xl)**2+(y[:,:,-1]-yl)**2)/gamma_args['r']**2))
+#     # -k*gradT = q 
+#     T = T.at[ 0,1:-1,1:-1].set(T[ 1,1:-1,1:-1]+q_x_neg/k[ 1,1:-1,1:-1]*dx)
+#     T = T.at[-1,1:-1,1:-1].set(T[-2,1:-1,1:-1]-q_x_pos/k[-2,1:-1,1:-1]*dx)
+#     T = T.at[1:-1, 0,1:-1].set(T[1:-1, 1,1:-1]+q_y_neg/k[1:-1, 1,1:-1]*dy)
+#     T = T.at[1:-1,-1,1:-1].set(T[1:-1,-2,1:-1]-q_y_pos/k[1:-1,-2,1:-1]*dy)
+#     T = T.at[1:-1,1:-1, 0].set(T[1:-1,1:-1, 1]+q_z_neg/k[1:-1,1:-1, 1]*dz)
+#     T = T.at[1:-1,1:-1,-1].set(T[1:-1,1:-1,-2]-q_z_pos/k[1:-1,1:-1,-2]*dz)
+#     return T
+
 @jax.jit
 def BC_thermal(T, k, xl, yl, x, y, P, dx, dy, dz, gamma_args):
-    """Robin boundary condition
-    """
-    T_x_neg = (T[ 1,1:-1,1:-1] + T[ 0,1:-1,1:-1])/2.
-    q_x_neg = (-gamma_args['h']*(T_x_neg-gamma_args['T0']) - gamma_args['SB']*gamma_args['eps']*(T_x_neg**4-gamma_args['T0']**4))
-    T_x_pos = (T[-2,1:-1,1:-1] + T[-1,1:-1,1:-1])/2
-    q_x_pos =  (gamma_args['h']*(T_x_pos-gamma_args['T0']) + gamma_args['SB']*gamma_args['eps']*(T_x_pos**4-gamma_args['T0']**4))
-    T_y_neg = (T[1:-1, 1,1:-1] + T[1:-1, 0,1:-1])/2
-    q_y_neg = (-gamma_args['h']*(T_y_neg-gamma_args['T0']) - gamma_args['SB']*gamma_args['eps']*(T_y_neg**4-gamma_args['T0']**4))
-    T_y_pos = (T[1:-1,-2,1:-1] + T[1:-1,-1,1:-1])/2
-    q_y_pos =  (gamma_args['h']*(T_y_pos-gamma_args['T0']) + gamma_args['SB']*gamma_args['eps']*(T_y_pos**4-gamma_args['T0']**4))
-    T_z_neg = (T[1:-1,1:-1, 1] + T[1:-1,1:-1, 0])/2
-    q_z_neg = (-gamma_args['h']*(T_z_neg-gamma_args['T0']) - gamma_args['SB']*gamma_args['eps']*(T_z_neg**4-gamma_args['T0']**4))
-    T_z_pos = (T[1:-1,1:-1,-2] + T[1:-1,1:-1,-1])/2
-    q_z_pos = ( gamma_args['h']*(T_z_pos-gamma_args['T0']) + gamma_args['SB']*gamma_args['eps']*(T_z_pos**4-gamma_args['T0']**4) \
-               - 2*P*gamma_args['eta']/jnp.pi/gamma_args['r']**2*jnp.exp(-2*((x[:,:,-1]-xl)**2+(y[:,:,-1]-yl)**2)/gamma_args['r']**2))
-    # -k*gradT = q 
-    T = T.at[ 0,1:-1,1:-1].set(T[ 1,1:-1,1:-1]+q_x_neg/k[ 1,1:-1,1:-1]*dx)
-    T = T.at[-1,1:-1,1:-1].set(T[-2,1:-1,1:-1]-q_x_pos/k[-2,1:-1,1:-1]*dx)
-    T = T.at[1:-1, 0,1:-1].set(T[1:-1, 1,1:-1]+q_y_neg/k[1:-1, 1,1:-1]*dy)
-    T = T.at[1:-1,-1,1:-1].set(T[1:-1,-2,1:-1]-q_y_pos/k[1:-1,-2,1:-1]*dy)
-    T = T.at[1:-1,1:-1, 0].set(T[1:-1,1:-1, 1]+q_z_neg/k[1:-1,1:-1, 1]*dz)
-    T = T.at[1:-1,1:-1,-1].set(T[1:-1,1:-1,-2]-q_z_pos/k[1:-1,1:-1,-2]*dz)
+
+    T = T.at[0, 1:-1, 1:-1].set(T[1, 1:-1, 1:-1])
+    T = T.at[-1, 1:-1, 1:-1].set(T[-2, 1:-1, 1:-1])
+    T = T.at[1:-1, 0, 1:-1].set(T[1:-1, 1, 1:-1])
+    T = T.at[1:-1, -1, 1:-1].set(T[1:-1, -2, 1:-1])
+    T = T.at[1:-1, 1:-1, 0].set(T[1:-1, 1:-1, 1])
+
+    T_top = T[1:-1, 1:-1, -2]
+    T0 = gamma_args["T0"]
+    r = gamma_args["r"]
+
+    q_laser = (2.0 * P * gamma_args["eta"] / (jnp.pi * r**2)
+        * jnp.exp(2.0 * ((x[:, :, -1] - xl)**2+ (y[:, :, -1] - yl)**2) / r**2))
+    q_conv = gamma_args["h"] * (T_top - T0)
+    q_rad = (gamma_args["SB"] * gamma_args["eps"] * (T_top**4 - T0**4))
+
+    q_in = q_laser - q_conv - q_rad
+    T = T.at[1:-1, 1:-1, -1].set(T_top + dz * q_in / k[1:-1, 1:-1, -2])
     return T
 
 
